@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { INITIAL_OKRS } from './data/okrs.js'
+import { useState, useEffect } from 'react'
+import { getOkrs, patchKr, addKrApi, removeKrApi } from './api.js'
 import { THEMES, kPct, autoStatus, krStatus, statusStyle, okrPct, barColor, fmtTs } from './utils.js'
 import Header from './components/Header.jsx'
 import Dashboard from './components/Dashboard.jsx'
@@ -12,9 +12,19 @@ export default function App() {
   const [layout, setLayout] = useState('grid')
   const [quarter, setQuarter] = useState('All')
   const [editKrId, setEditKrId] = useState(null)
-  const [okrs, setOkrs] = useState(INITIAL_OKRS)
+  const [okrs, setOkrs] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(null)
+  const [saveError, setSaveError] = useState(null)
 
   const t = THEMES[theme]
+
+  useEffect(() => {
+    getOkrs()
+      .then(data => setOkrs(data))
+      .catch(err => setLoadError(err.message))
+      .finally(() => setLoading(false))
+  }, [])
 
   function updKr(id, patch) {
     setOkrs(prev =>
@@ -23,6 +33,7 @@ export default function App() {
         krs: o.krs.map(k => (k.id === id ? { ...k, ...patch } : k)),
       }))
     )
+    patchKr(id, patch).catch(err => setSaveError(err.message))
   }
 
   const selOkr = okrs.find(o => o.id === selId) || null
@@ -54,26 +65,28 @@ export default function App() {
 
   function addKr() {
     if (!selId) return
-    const nk = {
-      id: 'k' + Date.now(),
-      text: 'New Key Result',
-      target: 100, current: 0, unit: '%',
-      dl: 'Q4 FY26/27', dq: 'Q4', ms: null, note: '', noteTs: null,
-    }
-    setOkrs(prev =>
-      prev.map(o => o.id === selId ? { ...o, krs: [...o.krs, nk] } : o)
-    )
+    addKrApi(selId)
+      .then(nk => {
+        setOkrs(prev =>
+          prev.map(o => o.id === selId ? { ...o, krs: [...o.krs, nk] } : o)
+        )
+      })
+      .catch(err => setSaveError(err.message))
   }
 
   function removeKr(krId) {
     setEditKrId(null)
-    setOkrs(prev =>
-      prev.map(o =>
-        o.id === selId
-          ? { ...o, krs: o.krs.filter(k => k.id !== krId) }
-          : o
-      )
-    )
+    removeKrApi(krId)
+      .then(() => {
+        setOkrs(prev =>
+          prev.map(o =>
+            o.id === selId
+              ? { ...o, krs: o.krs.filter(k => k.id !== krId) }
+              : o
+          )
+        )
+      })
+      .catch(err => setSaveError(err.message))
   }
 
   const detPct = selOkr ? okrPct(selOkr) : 0
@@ -149,6 +162,25 @@ export default function App() {
           onBack={goBack}
           onAddKr={addKr}
         />
+      )}
+
+      {loading && (
+        <div style={{ padding: 40, textAlign: 'center', color: '#6E7C84', fontSize: 13 }}>Loading OKRs…</div>
+      )}
+
+      {loadError && (
+        <div style={{ margin: 32, padding: 16, background: '#FCEAEA', border: '1px solid #CC3333', borderRadius: 8, color: '#CC3333', fontSize: 13 }}>
+          Couldn't reach the API server ({loadError}). Make sure it's running with <code>npm run server</code> (or <code>npm run dev:all</code>) on port 3001.
+        </div>
+      )}
+
+      {saveError && (
+        <div
+          onClick={() => setSaveError(null)}
+          style={{ position: 'fixed', bottom: 20, right: 20, padding: '10px 16px', background: '#CC3333', color: 'white', borderRadius: 8, fontSize: 12, cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.2)' }}
+        >
+          Save failed: {saveError} (click to dismiss)
+        </div>
       )}
     </div>
   )

@@ -27,13 +27,14 @@ app.patch('/api/krs/:id', (req, res) => {
   const existing = db.prepare('SELECT * FROM key_results WHERE id = ?').get(id)
   if (!existing) return res.status(404).json({ error: 'Key result not found' })
 
-  const allowed = ['current', 'target', 'note', 'noteTs', 'ms']
+  const allowed = ['text', 'current', 'target', 'note', 'noteTs', 'ms']
   const patch = {}
   for (const key of allowed) {
     if (key in req.body) patch[key] = req.body[key]
   }
 
   const merged = {
+    text: patch.text ?? existing.text,
     current: patch.current ?? existing.current,
     target: patch.target ?? existing.target,
     note: patch.note ?? existing.note,
@@ -43,7 +44,7 @@ app.patch('/api/krs/:id', (req, res) => {
   }
 
   db.prepare(
-    'UPDATE key_results SET current=@current, target=@target, note=@note, note_ts=@note_ts, ms=@ms WHERE id=@id'
+    'UPDATE key_results SET text=@text, current=@current, target=@target, note=@note, note_ts=@note_ts, ms=@ms WHERE id=@id'
   ).run(merged)
 
   const updated = db.prepare('SELECT * FROM key_results WHERE id = ?').get(id)

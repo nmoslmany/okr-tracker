@@ -116,6 +116,7 @@ export default function App() {
           onEdit:          () => setEditKrId(kr.id),
           onStopEdit:      () => setEditKrId(null),
           onRemove:        () => removeKr(kr.id),
+          onTextChange:    e  => updKr(kr.id, { text: e.target.value }),
           onCurrentChange: e  => updKr(kr.id, { current: parseFloat(e.target.value) || 0 }),
           onTargetChange:  e  => updKr(kr.id, { target:  parseFloat(e.target.value) || 0 }),
           onNoteChange:    e  => updKr(kr.id, { note: e.target.value, noteTs: new Date().toISOString() }),

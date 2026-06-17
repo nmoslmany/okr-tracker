@@ -139,6 +139,15 @@ function KRCard({ kr, t }) {
       {/* Edit mode */}
       {kr.isEd && (
         <div>
+          <EditField label="Key Result Text" style={{ marginBottom: 12 }}>
+            <input
+              type="text"
+              defaultValue={kr.text}
+              onChange={kr.onTextChange}
+              style={{ width: '100%', border: `1px solid ${t.p}`, borderRadius: 6, padding: '7px 10px', fontSize: 13, fontWeight: 500, color: '#233737', outline: 'none', background: 'white' }}
+            />
+          </EditField>
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
             <EditField label="Current Value">
               <input
